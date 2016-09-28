@@ -242,7 +242,7 @@ function receivedMessage(event) {
 
   // You may get a text or attachment but not both
   var messageText = message.text;
-  var messageAttachments = message.attachments;
+  var messageAttachments = message.attachment;
 
 
   if (messageText) {  
@@ -251,13 +251,13 @@ function receivedMessage(event) {
     // If we receive a text message, check to see if it matches any special
     // keywords and send back the corresponding example. Otherwise, just echo
     // the text we received.
-//    switch (messageText) {  
-//      case 'receipt':
-//        sendReceiptMessage(senderID);
-//        break;
-//      default:
-//        sendTextMessage(senderID, messageText);
-//    }
+   switch (messageText) {
+     case 'receipt':
+       sendReceiptMessage(senderID);
+       break;
+     default:
+       sendTextMessage(senderID, messageText);
+   }
   } else if (messageAttachments) {
    writelog(senderID,"User Uploaded "+messageAttachments[0].type+"","USER");
  if(messageAttachments[0].type!="image")
