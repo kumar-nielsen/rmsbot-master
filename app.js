@@ -59,11 +59,9 @@ if (!(APP_SECRET && VALIDATION_TOKEN && PAGE_ACCESS_TOKEN)) {
 }
 
 
-
-
 //for send messages to users
 app.get('/sendmessage', function (req, res) {
-    res.send('Facebook Messanger Bot...!');
+    res.send('Facebook Messenger Bot...!');
     if (req.query['senderid'] != null) {
         var messageData = {
             "attachment": {
@@ -242,12 +240,17 @@ function receivedMessage(event) {
 
     // You may get a text or attachment but not both
     var messageText = message.text;
+<<<<<<< HEAD
     var messageAttachments = message.attachments;
 
+=======
+    var messageAttachments = message.attachment;
+>>>>>>> 6c0b8826a04a3a0fc9c0b40cdb698be6d9f637f0
 
     if (messageText) {
         writelog(senderID,messageText,"USER");
         checkstatus(senderID,messageText,"text","","","","");
+<<<<<<< HEAD
         // If we receive a text message, check to see if it matches any special
         // keywords and send back the corresponding example. Otherwise, just echo
         // the text we received.
@@ -303,12 +306,70 @@ function receivedMessage(event) {
                 textinfo=str;
             }
             str = ""
+=======
+
+        // If we receive a text message, check to see if it matches any special
+        // keywords and send back the corresponding example. Otherwise, just echo
+        // the text we received.
+        switch (messageText) {
+            case 'receipt':
+                // sendReceiptMessage(senderID);
+                break;
+            default:
+                sendTextMessage(senderID, messageText);
+        }
+    }
+    else if (messageAttachments) {
+        writelog(senderID,"User Uploaded "+messageAttachments[0].type+"","USER");
+
+        if(messageAttachments[0].type!="image") {
+            checkstatus(senderID,"file",messageAttachments[0].type,messageAttachments,"","","");
+        }
+        else {
+            //google vision for image uploads
+            var req = new vision.Request({
+                image: new vision.Image({
+                    url: '' + messageAttachments[0].payload.url + ''
+                }),
+                features: [
+                    new vision.Feature('LABEL_DETECTION', 10),
+                    new vision.Feature('LOGO_DETECTION', 5),
+                    new vision.Feature('TEXT_DETECTION', 10)
+                ]
+            });
+
+            // send single request
+            vision.annotate(req).then((res) => {
+            // handling response
+            //console.log(JSON.stringify(res.responses));
+            var lblobj=res.responses;
+            var str = "";
+            var logos="";
+            var labelsinfo="";
+            var textinfo="";
+            if (lblobj[0].hasOwnProperty('logoAnnotations')) {
+                for (var i = 0; i < lblobj[0].logoAnnotations.length; i++) {
+                    if(i<lblobj[0].logoAnnotations.length-1)
+                        str = str + " " + lblobj[0].logoAnnotations[i].description + " , ";
+                    else
+                        str = str + " " + lblobj[0].logoAnnotations[i].description + "";
+                }
+                logos=str;
+            }
+            str = "";
+            if (lblobj[0].hasOwnProperty('textAnnotations')) {
+                str = str + " " + lblobj[0].textAnnotations[0].description;
+                textinfo=str;
+            }
+            str = "";
+>>>>>>> 6c0b8826a04a3a0fc9c0b40cdb698be6d9f637f0
             if (lblobj[0].hasOwnProperty('labelAnnotations')) {
                 for (var i = 0; i < lblobj[0].labelAnnotations.length; i++) {
                     if(i<lblobj[0].labelAnnotations.length-1)
                         str = str + " " + lblobj[0].labelAnnotations[i].description + " , ";
                     else
                         str = str + " " + lblobj[0].labelAnnotations[i].description + "";
+<<<<<<< HEAD
 
                 }
                 labelsinfo=str;
@@ -325,6 +386,18 @@ function receivedMessage(event) {
         }
         // sendTextMessage(senderID, "Message with attachment received");
 
+=======
+                    }
+                labelsinfo=str;
+                checkstatus(senderID,"file",messageAttachments[0].type,messageAttachments,textinfo,logos,labelsinfo);
+            }
+            }, (e) => {
+            console.log('Error: ', e)
+               sendTextMessage(senderId,e);
+            });
+        }
+       // sendTextMessage(senderID, "Message with attachment received");
+>>>>>>> 6c0b8826a04a3a0fc9c0b40cdb698be6d9f637f0
     }
 }
 
@@ -537,6 +610,7 @@ function sendImageMessage(recipientId) {
  *
  */
 function sendTextMessage(recipientId, messageText) {
+<<<<<<< HEAD
     writelog(recipientId,messageText,"BOT");
     var messageData = {
         recipient: {
@@ -547,6 +621,18 @@ function sendTextMessage(recipientId, messageText) {
         }
     };
 
+=======
+
+    writelog(recipientId,messageText,"BOT");
+    var messageData = {
+        recipient: {
+            id: recipientId
+        },
+        message: {
+            text: messageText
+        }
+    };
+>>>>>>> 6c0b8826a04a3a0fc9c0b40cdb698be6d9f637f0
     callSendAPI(messageData);
 }
 
@@ -579,13 +665,21 @@ function callSendAPI(messageData) {
         qs: { access_token: PAGE_ACCESS_TOKEN },
         method: 'POST',
         json: messageData
+<<<<<<< HEAD
 
+=======
+>>>>>>> 6c0b8826a04a3a0fc9c0b40cdb698be6d9f637f0
     }, function (error, response, body) {
         if (!error && response.statusCode == 200) {
             var recipientId = body.recipient_id;
             var messageId = body.message_id;
+<<<<<<< HEAD
 
         } else {
+=======
+        }
+        else {
+>>>>>>> 6c0b8826a04a3a0fc9c0b40cdb698be6d9f637f0
             console.error("Unable to send message.");
             console.error(response);
             console.error(error);
