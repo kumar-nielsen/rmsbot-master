@@ -218,6 +218,234 @@ function receivedAuthentication(event) {
 }
 
 
+/**********************************************************************************
+* generic messages and pictures for communication with user
+*
+*/
+var GreetingMsg = "Hi! In English, write all drinks that you purchased today.";
+var GoodbyeMsg = "Thanks! Goodbye!";
+var MoreItemsMsg = "Do you have any more items?";
+var WhatElseMsg = "What else did you purchase (please write in English)?";
+var NeedHelpMsg = "Do you need help with the formatting?";
+var NiceJobMsg = "Nice job!";
+var MissingDataMsg = "Your message is missing characteristics.";
+var DidNotUnderstandMsg = "I didn't understand that. Can you try sending again?";
+var MissBrandMsg = "The brand for at least one of the items is missing.";
+var MissPackSizeMsg = "The pack size for at least one of the items is missing.";
+var MissPackTypeMsg = "The pack type for at least one of the items is missing.";
+var MissQuantityMsg = "The quantity for at least one of the items is missing.";
+
+var ExampleMsg = "Include the brand, pack type, size, and quantity of the drinks."
+
+// Pictures
+var examplePicUrl1 = "http://i.imgur.com/2SRoGW8.png";
+var examplePicUrl2 = "http://i.imgur.com/WXEI56K.png";
+var examplePicUrl3 = "http://i.imgur.com/i3qBlz9.png";
+
+
+var resetMessage = "#r123";
+
+var PAYLOAD_GREETING = "greeting";
+var PAYLOAD_ITEMS_DETECTED_FORMAT_CORRECT = "idfc";
+var PAYLOAD_ITEMS_DETECTED_FORMAT_INCORRECT = "idfi";
+var PAYLOAD_ITEMS_NOT_DETECTED = "ind";
+var PAYLOAD_ASK_FOR_NEXT_ITEMS_PROMPT = "afnip";
+var PAYLOAD_EXAMPLES_REQUESTED = "er";
+var PAYLOAD_GOODBYE = "goodbye";
+
+function getMessageForGivenPayload(payload) {
+	
+	var elements = null;
+	var messageText = null;
+	switch (payload) {
+		case PAYLOAD_ITEMS_DETECTED_FORMAT_CORRECT:
+    		elements = [{
+    			"title":"Nice Work!",
+    			"subtitle": NiceJobMsg + MoreItemsMsg,
+    			"buttons":[  
+	            	{  
+	                	"type":"postback",
+	                	"title":"Yes",
+	                	"payload":PAYLOAD_ASK_FOR_NEXT_ITEMS_PROMPT
+	            	},
+	            	{  
+	                	"type":"postback",
+	                	"title":"No",
+	                	"payload":PAYLOAD_GOODBYE
+	            	}
+	          	]
+    		}]
+			break;
+		case PAYLOAD_ITEMS_DETECTED_FORMAT_INCORRECT:
+			elements = [{
+    			"title":"What did you mean?",
+    			"subtitle":MissingDataMsg,
+    			"buttons":[  
+	            	{  
+	                	"type":"postback",
+	                	"title":"Help",
+	                	"payload":PAYLOAD_EXAMPLES_REQUESTED
+	            	},
+	            	{  
+	                	"type":"postback",
+	                	"title":"Skip",
+	                	"payload":PAYLOAD_ASK_FOR_NEXT_ITEMS_PROMPT
+	            	}
+	          		]
+    		}]
+			break;
+		case PAYLOAD_ITEMS_NOT_DETECTED:
+			elements = [{
+    			"title":"I didn't understand",
+    			"subtitle":NeedHelpMsg,
+    			"buttons":[  
+	            	{  
+	                	"type":"postback",
+	                	"title":"Help",
+	                	"payload":PAYLOAD_EXAMPLES_REQUESTED
+	            	},
+	            	{  
+	                	"type":"postback",
+	                	"title":"Skip",
+	                	"payload":PAYLOAD_ASK_FOR_NEXT_ITEMS_PROMPT
+	            	}
+	          		]
+    		}]
+			break;
+		case PAYLOAD_ASK_FOR_NEXT_ITEMS_PROMPT:
+			elements = [{
+    			"title":"Anything else?",
+    			"subtitle":WhatElseMsg,
+    			"buttons": 
+            	[{  
+                	"type":"postback",
+                	"title":"Help",
+                	"payload":PAYLOAD_EXAMPLES_REQUESTED
+            	},
+            	{  
+                	"type":"postback",
+                	"title":"Quit",
+                	"payload":PAYLOAD_GOODBYE
+            	}]
+    		}]
+			break;
+		case PAYLOAD_EXAMPLES_REQUESTED:
+			elements = [
+				{
+    				"title":"Example #1",
+    				"image_url":examplePicUrl1
+    			},
+    			{
+    				"title":"Example #2",
+    				"image_url":examplePicUrl2
+    			},
+    			{
+    				"title":"Example #3",
+    				"image_url":examplePicUrl3
+    			}
+    		]
+			break;
+		case PAYLOAD_GOODBYE:
+			elements = [{
+    			"title":"Goodbye",
+    			"subtitle":GoodbyeMsg
+    		}]
+			break;
+		default:
+			elements = [{
+				"title":"Welcome",
+				"subtitle":GreetingMsg,
+				"buttons": 
+	            [{  
+	                "type":"postback",
+	                "title":"More Examples",
+	                "payload":PAYLOAD_EXAMPLES_REQUESTED
+	            }]
+			}]
+	}
+
+	var messageData = { 
+						"attachment":{  
+						      "type":"template",
+						      "payload":{  
+						        	"template_type":"generic",
+						        	"elements": elements
+						    }
+						}
+					}
+	return messageData;
+}
+
+// Brands
+var BrandList = ["coke","pepsi"];
+// Pack Sizes
+var PackSizeList = ["250ml","2l"];
+// Pack Types
+var PackTypeList = ["plastic","tetrapack","aluminum"];
+// Quantities
+var QuantityList = ["one","two","three"];
+
+function CountEntitiesInMessage(msgArr, entityArr) {
+	var count = 0;
+	for (var i = 0; i < msgArr.length; i++) {
+		for (var j = 0; j < entityArr.length; j++) {
+			if (msgArr[i] == entityArr[j]) {
+				count++;
+			}
+		}
+	}
+	return count;
+}
+
+function countsMatch(arr) {
+
+}
+
+function analyzeTextAndGenerateResponse(textData,payload) {
+
+	// if they're sending a payload, we'll use that one. otherwise, analyze the text to come to a conlcusion.
+	if (payload == null) {
+		// first check to see if it's a reset message 
+		if (textData.indexOf(resetMessage) > -1) {
+			payload = PAYLOAD_GREETING;
+		} else {
+			var textArr = textData.toLowerCase().replace(',','	').replace(/\s\s+/g, ' ').split(" ");
+			var INDEX_BRAND = 0;
+			var INDEX_PACK_SIZE = 1;
+			var INDEX_PACK_TYPE = 2;
+			var INDEX_QUANTITY = 3;
+			var countArr = [];
+			countArr[INDEX_BRAND] = CountEntitiesInMessage(textArr,BrandList);
+			countArr[INDEX_PACK_SIZE] = CountEntitiesInMessage(textArr,PackSizeList);
+			countArr[INDEX_PACK_TYPE] = CountEntitiesInMessage(textArr,PackTypeList);
+			countArr[INDEX_QUANTITY] = CountEntitiesInMessage(textArr,QuantityList);
+
+			var maxCounts = Math.max.apply(null,countArr);
+			// if the max is 0, then we didn't get any good information from that message
+			if (maxCounts == 0) {
+				payload = PAYLOAD_ITEMS_NOT_DETECTED;
+			} else {
+				var formattingCorrect = true;
+				// if there are any outliers, this isn't correctly formatted message
+				for(var i = 0; i < countArr.length; i+=1) {
+					if (countArr[i] != maxCounts) {
+						formattingCorrect = false;
+					}
+				}
+				if (formattingCorrect) {
+					payload = PAYLOAD_ITEMS_DETECTED_FORMAT_CORRECT;
+				} else {
+					payload = PAYLOAD_ITEMS_DETECTED_FORMAT_INCORRECT;
+				}
+			}
+		}
+	}
+	// carousel example
+	var messageData = getMessageForGivenPayload(payload);
+	return messageData;
+}
+
+
 /*
  * Message Event
  *
@@ -246,7 +474,7 @@ function receivedMessage(event) {
 
 
   if (messageText) {  
-  writelog(senderID,messageText,"USER");
+  //writelog(senderID,messageText,"USER");
   checkstatus(senderID,messageText,"text","","","","");   
     // If we receive a text message, check to see if it matches any special
     // keywords and send back the corresponding example. Otherwise, just echo
@@ -259,7 +487,7 @@ function receivedMessage(event) {
 //        sendTextMessage(senderID, messageText);
 //    }
   } else if (messageAttachments) {
-   writelog(senderID,"User Uploaded "+messageAttachments[0].type+"","USER");
+   //writelog(senderID,"User Uploaded "+messageAttachments[0].type+"","USER");
  if(messageAttachments[0].type!="image")
  { 
    checkstatus(senderID,"file",messageAttachments[0].type,messageAttachments,"","","");
@@ -372,16 +600,16 @@ function receivedPostback(event) {
   // The 'payload' param is a developer-defined field which is set in a postback 
   // button for Structured Messages. 
   var payload = event.postback.payload;
-  if(payload=="Q1YES")
-  {           
-      
+  
+ // if(payload=="Q1YES")
+  //{           
 
              fb.api('/' + senderID + '', function (err, data) {            
-                     if (data) {  
-                     writelog(senderID,"Yes","USER");                  
-                     assignmission(senderID,data.first_name+" "+data.last_name,data.profile_pic,"Q1YES",recipientID);  
+                if (data) {  
+                     //writelog(senderID,"Yes","USER");                  
+                     //assignmission(senderID,data.first_name+" "+data.last_name,data.profile_pic,"Q1YES",recipientID);  
                      
-                      var messageData = {
+                      /*var messageData = {
         "attachment": {
             "type": "template",
             "payload": {
@@ -401,16 +629,17 @@ function receivedPostback(event) {
                 }]
             }
         }
-    };
-      sendGenericMessage(senderID,messageData);  
+    };*/			
+    				var messageData = analyzeTextAndGenerateResponse(null,payload);
+      				sendGenericMessage(senderID,messageData);  
        
                       
-                     }
-                     }); 
+                }
+            }); 
      
       
-  }
-  else if(payload=="Q1NO")
+  //}
+  /*else if(payload=="Q1NO")
   {
      
 
@@ -506,6 +735,7 @@ function receivedPostback(event) {
 
   // When a postback is called, we'll send a message back to the sender to 
   // let them know it was successful
+  */
 
 }
 
@@ -514,7 +744,7 @@ function receivedPostback(event) {
  * Send a message with an using the Send API.
  *
  */
-function sendImageMessage(recipientId) {
+function sendImageMessage(recipientId,picUrl) {
   var messageData = {
     recipient: {
       id: recipientId
@@ -523,7 +753,7 @@ function sendImageMessage(recipientId) {
       attachment: {
         type: "image",
         payload: {
-          url: "http://i.imgur.com/zYIlgBl.png"
+          url: picUrl
         }
       }
     }
@@ -556,7 +786,7 @@ writelog(recipientId,messageText,"BOT");
  *
  */
 function sendGenericMessage(recipientId,MessageTemplate) {
- writelog(recipientId,MessageTemplate.attachment.payload.elements[0].title,"BOT");
+ //writelog(recipientId,MessageTemplate.attachment.payload.elements[0].title,"BOT");
   var messageData = {
     recipient: {
       id: recipientId
@@ -597,7 +827,7 @@ function callSendAPI(messageData) {
 function writelog(sid,message,sendertype)
 {
 
-
+/*
 var http = require('http');
 var rid="187974701627313";
     var logdetails = JSON.stringify({       
@@ -638,13 +868,14 @@ var rid="187974701627313";
     reqPost.on('error', function (e) {
         console.error(e);
     });
+    */
 
 }
 
 //assigning mission
 function assignmission(id,name,picurl,Status,recipientID)
 {
-
+/*
 var http = require('http');
     var Userdetails = JSON.stringify({       
         'UID': '' + id + '',
@@ -684,14 +915,14 @@ var http = require('http');
     reqPost.end();
     reqPost.on('error', function (e) {
         console.error(e);
-    });
+    });*/
 }
 
 //send q2 status
 
 function SendQ2status(id,Status)
 {
-
+/*
 var http = require('http');
     var QTwostatus = JSON.stringify({       
         'UID': '' + id + '',        
@@ -728,7 +959,7 @@ var http = require('http');
     reqPost.end();
     reqPost.on('error', function (e) {
         console.error(e);
-    });
+    });*/
 }
 
 
@@ -746,81 +977,70 @@ var http = require('http');
 
 function checkstatus(id,text,type,files,imgtext,logo,labels)
 {
-var filetype="";
-var url="";
-if(type=="text")
-{
-if (text.indexOf("latitude=")>-1) {   
- url=getParamValuesByName('latitude', text)+"&"+getParamValuesByName('longitude', text);                      
- filetype="location";
-  } 
-  else{                   
-filetype=type;
-}
-}
-else
-{
-filetype=type;
-if(type=="image"||type=="audio")
-{
-url=files[0].payload.url;
-}
-else if(type=="location")
-{
-    var lat= files[0].payload.coordinates.lat;
-    var longitude=files[0].payload.coordinates.long;
-    url=lat+"&"+longitude;
-}                 
+	var filetype="";
+	var url="";
+	if(type=="text") {
+		// check to see if latitude exists in the text we've received (i.e. is it location data)
+		if (text.indexOf("latitude=")>-1) {   
+			url=getParamValuesByName('latitude', text)+"&"+getParamValuesByName('longitude', text);                      
+			filetype="location";
+		} else {                   
+			// where type is "text" as specified in the if statement above
+			filetype=type;
+		}
+	} else {
+		filetype=type;
+		if(type=="image"||type=="audio")
+		{
+			url=files[0].payload.url;
+		} else if(type=="location") {
+			var lat= files[0].payload.coordinates.lat;
+			var longitude=files[0].payload.coordinates.long;
+			url=lat+"&"+longitude;
+		}                 
+	}
 
-}
+	fb.api('/' + id + '', function (err, data) {            
+		if (data) {                
+		//  assignmission(senderID,data.first_name+" "+data.last_name,data.profile_pic,"Q1YES");   
+						
+		//SD
+		var http = require('http');
+		var SD = JSON.stringify({       
+			'uid': '' + id + '', 
+			'uname': '' + data.first_name+" "+data.last_name + '',    
+			'purl': '' + data.profile_pic + '',   
+			'text': '' + text + '',
+			 'type': '' + filetype + '',        
+			 'url': '' + url + '',
+			  'imgtext': '' + imgtext + '',
+			   'logo': '' + logo + '',
+				'labels': '' + labels + ''
+		});
 
-   fb.api('/' + id + '', function (err, data) {            
-                     if (data) {                    
-                   //  assignmission(senderID,data.first_name+" "+data.last_name,data.profile_pic,"Q1YES");   
-                    
-//SD
-var http = require('http');
-    var SD = JSON.stringify({       
-        'uid': '' + id + '', 
-        'uname': '' + data.first_name+" "+data.last_name + '',    
-        'purl': '' + data.profile_pic + '',   
-        'text': '' + text + '',
-         'type': '' + filetype + '',        
-         'url': '' + url + '',
-          'imgtext': '' + imgtext + '',
-           'logo': '' + logo + '',
-            'labels': '' + labels + ''
-    });
-
-
-    //5
-    var extServeroptionspost = {
-        host: '202.89.107.58',
-        port: '80',
-        path: '/BOTAPI/api/rmsbot',
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Content-Length': SD.length
-        }
-    };
-
- var reqPost = http.request(extServeroptionspost, function (res) {      
-        res.on('data', function (data) {
-      var status=data.toString("utf8").replace('"', '').replace('"', ''); 
-      console.log("mission status = "+status);
-      if(status=="New" || status=="Q1")
-      {
-      
-   
-        var messageData = {
-        "attachment": {
-            "type": "template",
-            "payload": {
-                "template_type": "generic",
-                "elements": [{
-                    "title": "Have you purchased any soft drinks/packaged drinking water today?",
-                    "subtitle": "",
+		// analyze the contents of the message and get the appropriate data to send back
+		var messageData = analyzeTextAndGenerateResponse(text,null);
+		/*var messageData = {
+						"attachment": {
+							"type": "template",
+							"payload": {
+								"template_type": "generic",
+								"elements": [{
+								    "title": "Have you purchased any soft drinks/packaged drinking waters or sodas today?",
+									  "image_url":"http://www.csee.umbc.edu/wp-content/uploads/2015/06/nielsen700.jpg",
+                    "subtitle": "subtitle #1",
+  									"buttons": [{
+    										"type": "postback",
+    										"title": "Yes",
+    										"payload": "Q1YES"
+  									}, {
+    										"type": "postback",
+    										"title": "No",
+    										"payload": "Q1NO"
+  									}]},{
+                    "title" : "TITLE #2",
+                    "image_url":"https://9020-presscdn-0-97-pagely.netdna-ssl.com/wp-content/uploads/2013/08/infografika-nielsen2-2048x926.jpg",
+                    "subtitle": "subtitle #2",
                     "buttons": [{
                         "type": "postback",
                         "title": "Yes",
@@ -829,171 +1049,218 @@ var http = require('http');
                         "type": "postback",
                         "title": "No",
                         "payload": "Q1NO"
-                    }]
-                }]
-            }
-        }
-    };
-      sendGenericMessage(id,messageData);  
-      }
-      else if(status=="Q2"){
+                    }]}
+                ]
+							}
+						}
+					};*/
+		sendGenericMessage(id,messageData);  
 
-       var messageData = {
-        "attachment": {
-            "type": "template",
-            "payload": {
-                "template_type": "generic",
-                "elements": [{
-                    "title": "Do you have invoices for soft drinks purchased today?",
-                    "subtitle": "",
+
+		//5
+		/*var extServeroptionspost = {
+			host: '202.89.107.58',
+			port: '80',
+			path: '/BOTAPI/api/rmsbot',
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'Content-Length': SD.length
+			}
+		};*/
+
+		/*
+		var reqPost = http.request(extServeroptionspost, function (res) {      
+			res.on('data', function (data) {
+				var status=data.toString("utf8").replace('"', '').replace('"', ''); 
+				console.log("mission status = "+status);
+				if(status=="New" || status=="Q1") {
+					var messageData = {
+						"attachment": {
+							"type": "template",
+							"payload": {
+								"template_type": "generic",
+								"elements": [{
+								    "title": "Have you purchased any soft drinks/packaged drinking waters or sodas today?",
+									  "image_url":"http://www.csee.umbc.edu/wp-content/uploads/2015/06/nielsen700.jpg",
+                    "subtitle": "subtitle #1",
+  									"buttons": [{
+    										"type": "postback",
+    										"title": "Yes",
+    										"payload": "Q1YES"
+  									}, {
+    										"type": "postback",
+    										"title": "No",
+    										"payload": "Q1NO"
+  									}]},{
+                    "title" : "TITLE #2",
+                    "image_url":"https://9020-presscdn-0-97-pagely.netdna-ssl.com/wp-content/uploads/2013/08/infografika-nielsen2-2048x926.jpg",
+                    "subtitle": "subtitle #2",
                     "buttons": [{
                         "type": "postback",
                         "title": "Yes",
-                        "payload": "Q2YES"
+                        "payload": "Q1YES"
                     }, {
                         "type": "postback",
                         "title": "No",
-                        "payload": "Q2NO"
-                    }]
-                }]
-            }
-        }
-    };
-      sendGenericMessage(id,messageData);  
+                        "payload": "Q1NO"
+                    }]}
+                ]
+							}
+						}
+					};
+					sendGenericMessage(id,messageData);  
+				} else if(status=="Q2") {
 
-      }
-       else if(status=="Q3Image"){
-       sendTextMessage(id,"Please use the camera button below to take a photo of the invoice and send it.");
-       }
-       else if(status=="Q5Answer"){
-   sendTextMessage(id,"How many soft drink items (SKUs) you purchased today? [Please enter a number]");
-       }
-        else if(status=="Q4"){
+				    var messageData = {
+						"attachment": {
+							"type": "template",
+							"payload": {
+								"template_type": "generic",
+								"elements": [{
+									"title": "Do you have invoices for soft drinks purchased today?",
+									"subtitle": "",
+									"buttons": [{
+										"type": "postback",
+										"title": "Yes",
+										"payload": "Q2YES"
+									}, {
+										"type": "postback",
+										"title": "No",
+										"payload": "Q2NO"
+									}]
+								}]
+							}
+						}
+					};
+					sendGenericMessage(id,messageData);  
 
-         var messageData = {
-        "attachment": {
-            "type": "template",
-            "payload": {
-                "template_type": "generic",
-                "elements": [{
-                    "title": "Did you purchase any soft drinks today for which you do not have the invoice?",
-                    "subtitle": "",
-                    "buttons": [{
-                        "type": "postback",
-                        "title": "Yes",
-                        "payload": "Q4YES"
-                    }, {
-                        "type": "postback",
-                        "title": "No",
-                        "payload": "Q4NO"
-                    }]
-                }]
-            }
-        }
-    };
-      sendGenericMessage(id,messageData);  
+				} else if(status=="Q3Image") {
+					sendTextMessage(id,"Please use the camera button below to take a photo of the invoice and send it.");
+				} else if(status=="Q5Answer") {
+					sendTextMessage(id,"How many soft drink items (SKUs) you purchased today? [Please enter a number]");
+				} else if(status=="Q4") {
 
-        }
-         else if(status=="RepeatQ5Data"){
+					var messageData = {
+						"attachment": {
+							"type": "template",
+							"payload": {
+								"template_type": "generic",
+								"elements": [{
+									"title": "Did you purchase any soft drinks today for which you do not have the invoice?",
+									"subtitle": "",
+									"buttons": [{
+										"type": "postback",
+										"title": "Yes",
+										"payload": "Q4YES"
+									}, {
+										"type": "postback",
+										"title": "No",
+										"payload": "Q4NO"
+									}]
+								}]
+							}
+						}
+					};
+					sendGenericMessage(id,messageData);  
 
-          var messageData = {
-        "attachment": {
-            "type": "template",
-            "payload": {
-                "template_type": "generic",
-                "elements": [{
-                    "title": "Do you have more items?",
-                    "subtitle": "",
-                    "buttons": [{
-                        "type": "postback",
-                        "title": "Yes",
-                        "payload": "MOREITEMSYES"
-                    }, {
-                        "type": "postback",
-                        "title": "No",
-                        "payload": "MOREITEMSNO"
-                    }]
-                }]
-            }
-        }
-    };
-      sendGenericMessage(id,messageData);  
+				} else if(status=="RepeatQ5Data"){
 
-       //  sendTextMessage(id,"Please type in the SKU of the i th item, or take a picture of the SKU, or send me a voice recording of the SKU");  
-         }
-         else if(status=="Completed"){
-          sendTextMessage(id,"Thank you!");         
-         }
-         else if(status.indexOf("We have only seen information")>-1)
-         {
+					var messageData = {
+						"attachment": {
+							"type": "template",
+							"payload": {
+								"template_type": "generic",
+								"elements": [{
+									"title": "Do you have more items?",
+									"subtitle": "",
+									"buttons": [{
+										"type": "postback",
+										"title": "Yes",
+										"payload": "MOREITEMSYES"
+									}, {
+										"type": "postback",
+										"title": "No",
+										"payload": "MOREITEMSNO"
+									}]
+								}]
+							}
+						}
+					};
+					sendGenericMessage(id,messageData);  
 
-         var messageData = {
-        "attachment": {
-            "type": "template",
-            "payload": {
-                "template_type": "generic",
-                "elements": [{
-                    "title": ""+status+"",
-                    "subtitle": "",
-                    "buttons": [{
-                        "type": "postback",
-                        "title": "Yes",
-                        "payload": "FINALCONFIRMYES"
-                    }, {
-                        "type": "postback",
-                        "title": "No",
-                        "payload": "FINALCONFIRMNO"
-                    }]
-                }]
-            }
-        }
-    };
-      sendGenericMessage(id,messageData);  
+				//  sendTextMessage(id,"Please type in the SKU of the i th item, or take a picture of the SKU, or send me a voice recording of the SKU");  
+			} else if(status=="Completed") {
+				sendTextMessage(id,"Thank you!");         
+			 } else if(status.indexOf("We have only seen information")>-1) {
 
-         }
-         else if(status.indexOf("ispicture-")>-1)        
-         {
-         var itemno=status.split("-")[1];
-          var messageData = {
-        "attachment": {
-            "type": "template",
-            "payload": {
-                "template_type": "generic",
-                "elements": [{
-                    "title": "Will you be able to take a picture of the item "+itemno+"?",
-                    "subtitle": "",
-                    "buttons": [{
-                        "type": "postback",
-                        "title": "Yes",
-                        "payload": "ISPICYES"
-                    }, {
-                        "type": "postback",
-                        "title": "No",
-                        "payload": "ISPICNO"
-                    }]
-                }]
-            }
-        }
-    };
-      sendGenericMessage(id,messageData);  
+			 var messageData = {
+			"attachment": {
+				"type": "template",
+				"payload": {
+					"template_type": "generic",
+					"elements": [{
+						"title": ""+status+"",
+						"subtitle": "",
+						"buttons": [{
+							"type": "postback",
+							"title": "Yes",
+							"payload": "FINALCONFIRMYES"
+						}, {
+							"type": "postback",
+							"title": "No",
+							"payload": "FINALCONFIRMNO"
+						}]
+					}]
+				}
+			}
+		};
+		  sendGenericMessage(id,messageData);  
 
-         }
-         else{
-          sendTextMessage(id,status);   
-         }
+			 }
+			 else if(status.indexOf("ispicture-")>-1)        
+			 {
+			 var itemno=status.split("-")[1];
+			  var messageData = {
+			"attachment": {
+				"type": "template",
+				"payload": {
+					"template_type": "generic",
+					"elements": [{
+						"title": "Will you be able to take a picture of the item "+itemno+"?",
+						"subtitle": "",
+						"buttons": [{
+							"type": "postback",
+							"title": "Yes",
+							"payload": "ISPICYES"
+						}, {
+							"type": "postback",
+							"title": "No",
+							"payload": "ISPICNO"
+						}]
+					}]
+				}
+			}
+		};
+		  sendGenericMessage(id,messageData);  
 
-       
-  });
-});
-
-  // 7
-    reqPost.write(SD);
-    reqPost.end();
-    reqPost.on('error', function (e) {
-        console.error(e);
-    });
-    }
-                     }); 
+			 }
+			 else{
+			  sendTextMessage(id,status);   
+			 }
+			/* end log if else block */
+			/*	   
+	  }); // end res.on
+	}); // end http callback definition
+	*/
+	  // 7
+		//reqPost.write(SD);
+		//reqPost.end();
+		//reqPost.on('error', function (e) {
+		//	console.error(e);
+		//});
+		} // end if statement
+	}); // end fb api callback definition
 
 }
 
@@ -1007,3 +1274,4 @@ app.listen(app.get('port'), function() {
 });
 
 module.exports = app;
+
