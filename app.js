@@ -1012,7 +1012,7 @@ function checkstatus(id,text,type,files,imgtext,logo,labels)
   console.log("exited type analysis block");
 	fb.api('/' + id + '', function (err, data) {     
     console.log("inside facebook api callback method");       
-		if (data) { 
+		//if (data) { 
     console.log("data exists");               
 		//  assignmission(senderID,data.first_name+" "+data.last_name,data.profile_pic,"Q1YES");   
 						
@@ -1271,7 +1271,7 @@ function checkstatus(id,text,type,files,imgtext,logo,labels)
 		//reqPost.on('error', function (e) {
 		//	console.error(e);
 		//});
-		} // end if statement
+		//} // end if statement
 	}); // end fb api callback definition
 
 }
