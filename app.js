@@ -468,6 +468,8 @@ function receivedMessage(event) {
 
   var messageId = message.mid;
 
+  console.log("received a message");
+
   // You may get a text or attachment but not both
   var messageText = message.text;
   var messageAttachments = message.attachments;
