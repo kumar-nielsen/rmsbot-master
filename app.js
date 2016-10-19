@@ -254,6 +254,8 @@ var PAYLOAD_EXAMPLES_REQUESTED = "er";
 var PAYLOAD_GOODBYE = "goodbye";
 
 function getMessageForGivenPayload(payload) {
+
+  console.log("getting message for payload");
 	
 	var elements = null;
 	var messageText = null;
@@ -403,6 +405,7 @@ function countsMatch(arr) {
 
 function analyzeTextAndGenerateResponse(textData,payload) {
 
+  console.log("analyzing text for response");
 	// if they're sending a payload, we'll use that one. otherwise, analyze the text to come to a conlcusion.
 	if (payload == null) {
 		// first check to see if it's a reset message 
@@ -788,6 +791,7 @@ writelog(recipientId,messageText,"BOT");
  *
  */
 function sendGenericMessage(recipientId,MessageTemplate) {
+  console.log("sending message");
  //writelog(recipientId,MessageTemplate.attachment.payload.elements[0].title,"BOT");
   var messageData = {
     recipient: {
@@ -806,6 +810,7 @@ function sendGenericMessage(recipientId,MessageTemplate) {
  *
  */
 function callSendAPI(messageData) {
+  console.log("calling send API");
   request({
     uri: 'https://graph.facebook.com/v2.6/me/messages',
     qs: { access_token: PAGE_ACCESS_TOKEN },
@@ -981,6 +986,7 @@ function checkstatus(id,text,type,files,imgtext,logo,labels)
 {
 	var filetype="";
 	var url="";
+  console.log("checking status");
 	if(type=="text") {
 		// check to see if latitude exists in the text we've received (i.e. is it location data)
 		if (text.indexOf("latitude=")>-1) {   
