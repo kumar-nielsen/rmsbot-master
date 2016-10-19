@@ -988,6 +988,8 @@ function checkstatus(id,text,type,files,imgtext,logo,labels)
 	var url="";
   console.log("checking status");
 	if(type=="text") {
+
+    console.log("type is text");
 		// check to see if latitude exists in the text we've received (i.e. is it location data)
 		if (text.indexOf("latitude=")>-1) {   
 			url=getParamValuesByName('latitude', text)+"&"+getParamValuesByName('longitude', text);                      
@@ -1007,14 +1009,16 @@ function checkstatus(id,text,type,files,imgtext,logo,labels)
 			url=lat+"&"+longitude;
 		}                 
 	}
-
-	fb.api('/' + id + '', function (err, data) {            
-		if (data) {                
+  console.log("exited type analysis block");
+	fb.api('/' + id + '', function (err, data) {     
+    console.log("inside facebook api callback method");       
+		if (data) { 
+    console.log("data exists");               
 		//  assignmission(senderID,data.first_name+" "+data.last_name,data.profile_pic,"Q1YES");   
 						
 		//SD
-		var http = require('http');
-		var SD = JSON.stringify({       
+		//var http = require('http');
+		/*var SD = JSON.stringify({       
 			'uid': '' + id + '', 
 			'uname': '' + data.first_name+" "+data.last_name + '',    
 			'purl': '' + data.profile_pic + '',   
@@ -1024,7 +1028,7 @@ function checkstatus(id,text,type,files,imgtext,logo,labels)
 			  'imgtext': '' + imgtext + '',
 			   'logo': '' + logo + '',
 				'labels': '' + labels + ''
-		});
+		});*/
 
 		// analyze the contents of the message and get the appropriate data to send back
 		var messageData = analyzeTextAndGenerateResponse(text,null);
